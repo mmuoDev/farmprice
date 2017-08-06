@@ -157,3 +157,50 @@ $app->post('/api/v1/farm/produce/add/price', function(Request $request, Response
         }
     }
 });
+/**
+ * Update the price for a particular user and produce
+ */
+$app->put('/api/v1/farm/produce/add/price', function(Request $request, Response $response){
+    $parsedBody = $request->getParsedBody();
+    $userId = $parsedBody['userId'];
+    $produceId = $parsedBody['produceId'];
+    $price = $parsedBody['pricePerKg'];
+    $contentType = $request->getContentType();
+    if($contentType != "application/json"){
+        $data = [
+            'code' => '403',
+            'message' => 'Content type must be application/json'];
+        return $response->withJson($data, 201);
+    }
+    else if(empty($userId) || empty($produceId) || empty($price)){
+        $data = [
+            'code' => '400',
+            'message' => 'One or more parameter is missing'];
+        return $response->withJson($data, 201);
+        //->write("Hello");
+    }else{
+        $dhb = new Models(); //Initiate an object of your Models class.
+        $id = $dhb->updatePrice($userId, $produceId, $price); //call the addPrice method
+        if($id == 'produce does not exist'){
+            $data = [
+                'code' => '404',
+                'message' => 'failure',
+                'error' => 'Produce does not exist. Add produce first'];
+            return $response->withJson($data, 200);
+        }else if($id == 'user does not exist'){
+            $data = [
+                'code' => '404',
+                'message' => 'failure',
+                'error' => 'User does not exist. Create user first'];
+            return $response->withJson($data, 200);
+        }
+        else {
+            $data = [
+                'code' => '200',
+                'message' => 'Price updated for specified product ID',
+                'data' => ['newPrice' => number_format($price)]
+            ];
+            return $response->withJson($data, 200);
+        }
+    }
+});

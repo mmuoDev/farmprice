@@ -98,10 +98,45 @@ class Models
             return $exception->getMessage();
         }
     }
+    public function updatePrice($user_id, $produce_id, $price) //update price of a produce
+    {
+        try {
+            /**
+             * Check if the user(farmer) exist
+             */
+            $query = "SELECT * FROM users where id = ?";
+            $stmt = $this->db->prepare($query);
+            $stmt->execute([$user_id]);
+            $user = $stmt->fetch(PDO::FETCH_OBJ);
+            /**
+             * Check if produce exist
+             */
+            $query = "SELECT * FROM produce where id = ?";
+            $stmt = $this->db->prepare($query);
+            $stmt->execute([$produce_id]);
+            $produce = $stmt->fetch(PDO::FETCH_OBJ);
+            if($user == false) { //Check if user already exist
+                return 'user does not exist';
+            }else if($produce == false){
+                return 'produce does not exist';
+            }
+            else{
+                $query = "UPDATE farm_prices SET price = :price where user_id = :user_id and produce_id = :produce_id";
+                $stmt = $this->db->prepare($query);
+                $stmt->bindParam(':price', $price);
+                $stmt->bindParam(':user_id', $user_id);
+                $stmt->bindParam(':produce_id', $produce_id);
+                $stmt->execute();
+                return 'price updated'; //Return the ID of the newly created user.
+            }
+        }catch(PDOException $exception){
+            return $exception->getMessage();
+        }
+    }
 
 
 }
 
 $class = new Models();
-echo $class->addPrice('4', '1', '7839');
+echo $class->updatePrice('4', '1', '19000');
 
