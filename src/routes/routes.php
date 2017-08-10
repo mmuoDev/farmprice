@@ -113,6 +113,8 @@ $app->post('/api/v1/farm/produce/add/price', function(Request $request, Response
     $userId = $parsedBody['userId'];
     $produceId = $parsedBody['produceId'];
     $price = $parsedBody['pricePerKg'];
+    
+
     $contentType = $request->getContentType();
     if($contentType != "application/json"){
         $data = [
@@ -165,6 +167,8 @@ $app->put('/api/v1/farm/produce/add/price', function(Request $request, Response 
     $userId = $parsedBody['userId'];
     $produceId = $parsedBody['produceId'];
     $price = $parsedBody['pricePerKg'];
+  
+
     $contentType = $request->getContentType();
     if($contentType != "application/json"){
         $data = [
@@ -202,5 +206,73 @@ $app->put('/api/v1/farm/produce/add/price', function(Request $request, Response 
             ];
             return $response->withJson($data, 200);
         }
+    }
+});
+
+/**
+GET method to fetch prices of a particular produce
+**/
+$app->get('/api/v1/farm/produce/price/{id}', function(Request $request, Response $response){
+    $id = $request->getAttribute('id');
+    $dhb = new Models(); //Initiate an object of your Models class.
+    $res = $dhb->getPriceByProduceId($id); //call the getUser method
+    if($res == "produce does not exist") {
+        $data = [
+            'code' => '404',
+            'message' => 'Failure',
+            'data' => [ //Return the user properties of the returned user object.
+                'error' => 'produce not found'
+            ]
+        ];
+        return $response->withJson($data, 200);
+    }else{
+    	foreach ($res as $res) { //Loop through all results
+    		$result[] = [ //Store all prices in an array
+            	'produce' => $res->produce_name,
+            	'pricePerKg' =>  number_format($res->price),
+            	'as at' => $res->day,
+            	'farmer' => $res->user_name,
+            	'state' => $res->state
+            ];
+        }
+        $data = [
+            'code' => '200',
+            'message' => 'Success',
+            'data' => $result     
+        ];
+        return $response->withJson($data, 200);
+    }
+});
+
+/**
+GET method to fetch all produces
+
+**/
+$app->get('/api/v1/farm/produce/list', function(Request $request, Response $response){
+    $dhb = new Models(); //Initiate an object of your Models class.
+    $res = $dhb->getAllProduce(); //call the getUser method
+    if($res == 'no produce') {
+        $data = [
+            'code' => '404',
+            'message' => 'Failure',
+            'data' => [ //Return the user properties of the returned user object.
+                'error' => 'No produce added yet',
+            ]
+        ];
+        return $response->withJson($data, 200);
+    }else{
+    	foreach ($res as $res) { //Loop through all results
+    		$result[] = [ //Store all prices in an array
+            	'id' => $res->id,
+            	'name' =>  $res->name,
+            	'description' => $res->description
+            ];
+        }
+        $data = [
+            'code' => '200',
+            'message' => 'Success',
+            'data' => $result
+        ];
+        return $response->withJson($data, 200);
     }
 });

@@ -80,9 +80,11 @@ class Models
             /**
              * Check if produce already exist in the farm_prices table
              */
-            $query = "SELECT * FROM farm_prices where id = ?";
+            $query = "SELECT * FROM farm_prices where user_id = :user_id and produce_id = :produce_id";
             $stmt = $this->db->prepare($query);
-            $stmt->execute([$produce_id]);
+            $stmt->bindParam(':user_id', $user_id);
+            $stmt->bindParam(':produce_id', $produce_id);
+            $stmt->execute();
             $product = $stmt->fetch(PDO::FETCH_OBJ);
 
             if($user == false) { //Check if user already exist
@@ -93,11 +95,16 @@ class Models
             else if ($product){
                 return 'produce already exist';
             }else{
-                $query = "INSERT INTO farm_prices (user_id, produce_id, price)VALUES(:user_id, :produce_id, :price)";
+                /** Get current datetime **/
+                date_default_timezone_set('Africa/Lagos');
+                $now = new DateTime();
+                $day = $now->format('Y-m-d H:i:s'); 
+                $query = "INSERT INTO farm_prices (user_id, produce_id, price, day)VALUES(:user_id, :produce_id, :price, :day)";
                 $stmt = $this->db->prepare($query);
                 $stmt->bindParam(':user_id', $user_id);
                 $stmt->bindParam(':produce_id', $produce_id);
                 $stmt->bindParam(':price', $price);
+                $stmt->bindParam(':day', $day);
                 $stmt->execute();
                 return 'price added'; //Return the ID of the newly created user.
             }
@@ -108,23 +115,15 @@ class Models
     public function updatePrice($user_id, $produce_id, $price) //update price of a produce
     {
         try {
-            /**
-             * Check if the user(farmer) exist
-             */
-            $query = "SELECT * FROM users where id = ?";
+            
+            $query = "SELECT * FROM farm_prices where user_id = :user_id and produce_id = :produce_id";
             $stmt = $this->db->prepare($query);
-            $stmt->execute([$user_id]);
-            $user = $stmt->fetch(PDO::FETCH_OBJ);
-            /**
-             * Check if produce exist
-             */
-            $query = "SELECT * FROM produce where id = ?";
-            $stmt = $this->db->prepare($query);
-            $stmt->execute([$produce_id]);
-            $produce = $stmt->fetch(PDO::FETCH_OBJ);
-            if($user == false) { //Check if user already exist
-                return 'user does not exist';
-            }else if($produce == false){
+            $stmt->bindParam(':user_id', $user_id);
+            $stmt->bindParam(':produce_id', $produce_id);
+            $stmt->execute();
+            $product = $stmt->fetch(PDO::FETCH_OBJ);
+
+            if($product == false){
                 return 'produce does not exist';
             }
             else{
@@ -140,5 +139,51 @@ class Models
             return $exception->getMessage();
         }
     }
+    public function getPriceByProduceId($produce_id) //Get all prices of a particular produce
+    {
+        try {
+            $query = "SELECT * FROM farm_prices where produce_id = :produce_id";
+            $stmt = $this->db->prepare($query);
+            $stmt->bindParam(':produce_id', $produce_id);
+            $stmt->execute();
+            $product = $stmt->fetch(PDO::FETCH_OBJ);
+
+            if($product == false){
+                return 'produce does not exist';
+            }else{
+            //Check if produce exist
+            $query = "SELECT a.price AS price, a.day as day, b.name as user_name, b.state as state, c.name as produce_name FROM farm_prices as a, users as b, produce as c 
+            where 
+            a.produce_id = c.id and
+            b.id = a.user_id and
+            produce_id = ?";
+            $stmt = $this->db->prepare($query);
+            $stmt->execute([$produce_id]);
+            $prices = $stmt->fetchAll(PDO::FETCH_OBJ);
+            //var_dump($prices);exit;
+            return $prices; //Return the ID of the newly created user.
+            }
+        }catch(PDOException $exception){
+            return $exception->getMessage();
+        }
+    }
+    public function getAllProduce() //Get all prices of a particular produce
+    {
+        try {
+            $query = "SELECT * FROM produce";
+            $stmt = $this->db->prepare($query);
+            $stmt->execute();
+            $product = $stmt->fetchAll(PDO::FETCH_OBJ);
+
+            if($product == false){
+                return 'no produce';
+            }else{
+            return $product; //Return the ID of the newly created user.
+            }
+        }catch(PDOException $exception){
+            return $exception->getMessage();
+        }
+    }
+
 
 }
